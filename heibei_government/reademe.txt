@@ -1,0 +1,1 @@
+1、请求post连接传值用json数据格式文件 requests.post(url,json=detail_data,headers=headers,timeout=3)
