@@ -96,8 +96,10 @@ class Product(threading.Thread):
             if data["totle"] == 0:
                 continue
 
-            for page in range(1,data["totle"]//100+2):
+            for page in range(1,data["totle"]):
+
                 for i in self.get_follows(data["userid"],page):
+
                     if lock.acquire():
                         need_crawlids.append(i)  # 新获取到的，追加到等待爬取的列表里面
                         lock.release()

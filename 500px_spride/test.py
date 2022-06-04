@@ -10,3 +10,9 @@ print('状态码：', response.status_code)
 print('响应头信息：', response.headers)
 # 获取响应正文
 print('响应正文：', response.text)
+class test():
+    def __init__(self):
+        self.proxy_list={1241}
+    def getaleen(self):
+        self.proxy_list
+
