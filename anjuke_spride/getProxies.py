@@ -2,7 +2,7 @@ import requests,json,random
 from fake_useragent import UserAgent
 def proxyIp(quantity):
 
-    ip="https://h.shanchendaili.com/api.html?action=get_ip&key=HUae23a44b0526153754Ok6C&time=10&count={}&protocol=http&type=json&only=0"
+    ip="https://h.shanchendaili.com/api.html?action=get_ip&key=HUae23a44b0526153754Ok6C&time=1&count={}&protocol=http&type=json&only=0"
     test=requests.get(ip.format(quantity))
     # proxy_josn=json.loads(test.text)
     # proxy=proxy_josn["list"][0]
@@ -14,13 +14,11 @@ def proxyIp(quantity):
     for i in proxy:
         # print(str(i['sever'])+":"+str(i["port"]))
         ip=str(i['sever'])+":"+str(i["port"])
+
         yield ip
 
-#
-# ips=list(proxyIp(1))
-# print(ips[0])
-# for i in ips:
-#     print(i)
+
+
 
 
 # ip=ips[0]

@@ -8,12 +8,12 @@ import requests
 from anjuke_spride.getProxies import proxyIp
 from fake_useragent import UserAgent
 from scrapy import Selector
+import pymongo
 
-
-# ip=""
-# proxy = "http://%(ip)s" % {
-#     "ip" : ip
-# }
+ip=""
+proxy = "http://%(ip)s" % {
+    "ip" : ip
+}
 useragent = UserAgent()
 headers = {
     'User-Agent': useragent.random,
@@ -30,19 +30,19 @@ class AnJuKe(object):
     def get_citi_list(self):
         UserAgent=self.ua
 
-        # ip=random.choice(self.proxies_list)
-        # proxies = {
-        #
-        #     "http"  : ip,
-        #     "https"  : ip,
-        # }
+        ip=random.choice(self.proxies_list)
+        proxies = {
 
-        # response=requests.get(self.citi_list_url,headers=headers,proxies=proxies.__format__(ip),timeout=(5,5))
-        # sel=Selector(text=response.text)
-        # # city_name=sel.xpath("//div[@class='city_list']/a/text()").extract()
-        # city_name = sel.xpath("//div[@class='city_list']/a/text()").extract()
-        # city_url=sel.xpath("//div[@class='city_list']/a/@href").extract()
-        # print(city_name)
+            "http"  : ip,
+            "https"  : ip,
+        }
+
+        response=requests.get(self.citi_list_url,headers=headers,proxies=proxies.__format__(ip),timeout=(5,5))
+        sel=Selector(text=response.text)
+        # city_name=sel.xpath("//div[@class='city_list']/a/text()").extract()
+        city_name = sel.xpath("//div[@class='city_list']/a/text()").extract()
+        city_url=sel.xpath("//div[@class='city_list']/a/@href").extract()
+        print(city_name)
         # for i in range(len(city_name)):
         #     L=[city_name[i],city_url[i]]
         #     with open('地址表.csv', 'a+',newline='',encoding='gbk') as f:

@@ -1,5 +1,5 @@
 import requests
-
+import numpy
 
 url="https://api.yglz.hebnews.cn/api/system/homePage/getMessageList"
 data={"pageNum":2,"pageSize":10,"type":2}

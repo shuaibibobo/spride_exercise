@@ -1,125 +1,191 @@
-import random
-import numpy as np
-import requests
-import re
-from bs4 import BeautifulSoup
-file=open("./ip.txt",'r', encoding='UTF-8')
+#!/usr/bin/env python3
+#encoding=utf-8
+import os
+import sys
+import time
+import signal
+import subprocess
+import argparse
+import uuid
 
-proxies_list=file.readlines()
+from socket import *
+from random import randint
 
-ip_list = []
+from mitmproxy.certs import CertStore
+from mitmproxy.options import CONF_DIR, CONF_BASENAME, KEY_SIZE
+from mitmproxy.version import VERSION
 
+from packaging.version import parse as ver
 
-
-
-url = 'http://icanhazip.com'
-
-#
-# # for i in proxies_list:
-# #     print(i.replace("\n","").replace("\r", ""))
-#
-# # print(proxies_list[1].split())
-# # print(proxies_list[2].split())
-# # str1=re.sub('[\n]+', '\n', proxies_list[1])
-# # print(str1)
-# ip_list = []
-# for proxy_ip in proxies_list:
-#     proxy_ip=proxy_ip.replace("\n","").replace("\r", "")
-#     print(proxy_ip)
-#     # print(proxies_list)
-#     proxies = {'http': proxy_ip}
-#     try:
-#         wb_data = requests.get(url=url,timeout=5,proxies=proxies)
-#         flag = True
-#     except:
-#         # proxies_list.remove(proxies['http'])
-#         flag = False
-#
-#     if flag:
-#         ip_list.append(proxies['http'])
-# print(ip_list)
-
-import requests
-url = 'http://httpbin.org/ip'
-proxies_list = [
-    'http://117.66.167.116:8118',
-    'http://118.190.95.35:9001',
-    'http://116.77.204.2:80',
-    'http://110.40.13.5:80',
-    "112.6.117.135:8085",
-    "5.189.140.113:8118",
-    "194.233.73.105:443",
-    "45.32.10.63:1081",
-    "218.75.102.198:8000",
-    "106.54.128.253:999"
-]
-ip_list = []
-
-# for proxy_ip in proxies_list:
-#     print (proxy_ip)
-#     # print(proxies_list)
-#     proxies = {'http': proxy_ip}
-#     try:
-#         wb_data = requests.get(url=url,proxies=proxies)
-#         flag = True
-#     except:
-#         proxies_list.remove(proxies['http'])
-#         flag = False
-#
-#     if flag:
-#         ip_list.append(proxies['http'])
-# print (ip_list)
+from lamda import __version__
+from lamda.client import *
 
 
-# def jiance(ip_port):
-#     ip = ip_port.split(':')[0]
-#     proxies = {
-#         'http': ip_port,
-#         'https': ip_port
-#     }
-    url="http://httpbin.org/ip"
-    header={'User-Agent':'Mozilla/5.0'}
-    if not proxies_list:
-        print('ip_port不能为空')
+cleaning = False
+def cleanup(*args, **kwargs):
+    global cleaning
+    if cleaning is True:
+        return
+    cleaning = True
+    log ("terminate server")
+    proc.kill()
+    log ("uninstall certificate")
+    d.uninstall_ca_certificate(ca)
+    log ("disable proxy")
+    d.stop_gproxy()
 
-    try:
-        response=requests.get(url,headers=header,proxies=proxies,timeout=5)
-        # print(response)
-        html = response.text
-        # print(html)
-        if ip in html:
-            print('ip有效',ip_port)
-        # print(html)
-        else:
-            print('ip无效')
-    except :
-        print("超时")
 
-#获得的ip数据
-# datas = [
-#     '54.38.181.125:3128',
-#     '218.252.244.104:80',
-#     '95.216.12.141:22214',
-#     '116.117.134.135:8081',
-#     '194.233.73.105:443',
-#     '116.117.134.135:9999',
-#     '180.97.34.35:80',
-#     '202.108.22.5:80',
-#     '218.59.139.238:80',
-#     '220.181.111.37:80',
-#     '222.74.202.232:80',
-#     '222.74.202.233:80',
-#     '222.74.202.233:9999',
-#     '222.74.202.234:8081',
-#     '222.74.202.237:80',
-#     '222.74.202.238:8080',
-#     '222.74.202.239:80',
-#     '222.74.202.239:8080',
-#     '222.74.202.240:9999',
-#     '222.74.202.243:80',
-#     '222.74.202.245:80',
-#     '47.98.183.59:3128',
-# ]
-#
-# for ip_port in datas:
-#     jiance(ip_port)
+def add_server(command, spec):
+    spec and command.append("--mode")
+    spec and command.append(spec)
+
+
+def log(*args):
+    print (time.ctime(), *args)
+
+
+def adb(*args):
+    command = ["adb"]
+    command.extend(args)
+    log (" ".join(command))
+    proc = subprocess.Popen(command)
+    return proc
+
+
+def adb_tcp(action, aport, bport):
+    p = adb(action, "tcp:{}".format(aport),
+            "tcp:{}".format(bport))
+    return p
+
+
+def reverse(aport, bport):
+    return adb_tcp("reverse", aport, bport)
+
+
+def forward(aport, bport):
+    return adb_tcp("forward", aport, bport)
+
+
+def get_default_interface_ip_imp(target):
+    s = socket(AF_INET, SOCK_DGRAM)
+    s.connect(( target, lamda ))
+    return s.getsockname()[0]
+
+
+def get_default_interface_ip(target):
+    default = get_default_interface_ip_imp(target)
+    ip = os.environ.get("LANIP", default)
+    return ip
+
+
+print (r"           __                 __            .__  __            ")
+print (r"   _______/  |______ ________/  |_    _____ |__|/  |_  _____   ")
+print (r"  /  ___/\   __\__  \\_  __ \   __\  /     \|  \   __\/     \  ")
+print (r"  \___ \  |  |  / __ \|  | \/|  |   |  Y Y  \  ||  | |  Y Y  \ ")
+print (r" /____  > |__| (____  /__|   |__|   |__|_|  /__||__| |__|_|  / ")
+print (r"      \/            \/                    \/               \/  ")
+print (r"                 Android HTTP Traffic Capture                  ")
+print (r"%60s" %                            ("lamda#v%s" % (__version__)))
+
+
+pkgName = None
+argv = sys.argv
+host = argv[1]
+argp = argparse.ArgumentParser()
+
+def dnsopt(dns):
+    return "reverse:dns://{}@53".format(dns)
+argp.add_argument("-m", "--mode", default="regular")
+argp.add_argument("-d", "--dns", type=dnsopt, nargs="?",
+                  const="1.1.1.1")
+args, extras = argp.parse_known_args(argv[2:])
+
+if ":" in host:
+    host, pkgName = host.split(":")
+if args.dns and ver(VERSION) < ver("9.0.0"):
+    log ("dns mitm needs mitmproxy>=9.0.0")
+    sys.exit (1)
+
+login = "mitm"
+psw = uuid.uuid4().hex[::4]
+cert = os.environ.get("CERTIFICATE")
+proxy = int(os.environ.get("PROXYPORT",
+                           randint(28080, 58080)))
+lamda = int(os.environ.get("LAMDAPORT",
+                           65000))
+
+server = get_default_interface_ip(host)
+usb = server in ("127.0.0.1", "::1")
+
+if cert:
+    log ("ssl:", cert)
+if usb and args.dns:
+    log ("dns mitm not available with usb")
+if usb and (forward(lamda, lamda).wait() != 0 or \
+            reverse(proxy, proxy).wait() != 0):
+    log ("forward failed")
+    sys.exit (1)
+
+# 创建设备实例
+d = Device(host, port=lamda,
+           certificate=cert)
+
+# 拼接证书文件路径
+DIR = os.path.expanduser(CONF_DIR)
+CertStore.from_store(DIR, CONF_BASENAME, KEY_SIZE)
+ca = os.path.join(DIR, "mitmproxy-ca-cert.pem")
+
+log ("install cacert: %s" % ca)
+d.install_ca_certificate(ca)
+
+# 初始化 proxy 配置
+profile = GproxyProfile()
+profile.type = GproxyType.HTTP_CONNECT
+if not usb and args.dns:
+    profile.nameserver = server
+profile.drop_udp = True
+
+profile.host = server
+profile.port = proxy
+
+profile.login = login
+profile.password = psw
+log ("set proxy: %s:%s@%s:%s/%s" % (
+    login, psw,
+    server, proxy,
+    pkgName or "all"))
+if pkgName is not None:
+    profile.application.set(d.application(pkgName))
+d.start_gproxy(profile)
+
+command = []
+command.append("mitmweb")
+# 设置 MITMPROXY 代理模式
+add_server(command, args.mode)
+add_server(command, args.dns)
+command.append("--ssl-insecure")
+# 代理认证，防止误绑定到公网被扫描
+command.append("--proxyauth")
+command.append("{}:{}".format(login, psw))
+# 随机 web-port
+command.append("--web-port")
+command.append(str(randint(18080, 58080)))
+command.append("--no-rawtcp")
+command.append("--listen-port")
+command.append(str(proxy))
+# 追加额外传递的参数
+command.extend(extras)
+
+log (" ".join(command))
+proc = subprocess.Popen(command, shell=False)
+
+signal.signal(signal.SIGINT, cleanup)
+signal.signal(signal.SIGTERM, cleanup)
+
+log ("press CONTROL + C to stop")
+log ("server pid %s" % proc.pid)
+retcode = proc.wait()
+
+# 确保 cleanup 被调用
+os.kill(os.getpid(), signal.SIGTERM)
+sys.exit (retcode)

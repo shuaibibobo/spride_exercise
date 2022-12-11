@@ -5,6 +5,7 @@ from redis import StrictRedis
 import pymongo
 import time
 import json
+
 #########mongo部分#########################
 DATABASE_IP = '127.0.0.1'
 DATABASE_PORT = 27017
